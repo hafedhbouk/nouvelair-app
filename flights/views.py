@@ -2,13 +2,13 @@
 Vues de l'application Flights.
 """
 
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.views.generic import ListView, DetailView, TemplateView
 from django.utils import timezone
 from django.contrib import messages
 from django.db import models
-from .models import Airport, Flight, Aircraft
+from .models import Airport, Flight
 from .forms import FlightSearchForm
 
 

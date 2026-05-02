@@ -4,8 +4,7 @@ Modèle Flight - Application de gestion des vols.
 
 from django.db import models
 from django.utils import timezone
-from django.core.validators import MinValueValidator, MaxValueValidator
-import uuid
+from django.core.validators import MinValueValidator
 
 
 class Airport(models.Model):
@@ -125,7 +124,9 @@ class Flight(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Actif")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     def get_duration_display(self):
+
         if self.arrival_time and self.departure_time:
             diff = self.arrival_time - self.departure_time
             total_minutes = int(diff.total_seconds() / 60)
@@ -138,6 +139,14 @@ class Flight(models.Model):
             else:
                 return '%dmin' % minutes
         return ''
+
+    def get_durations_display(self):
+        """Calcule et formate la durée du vol."""
+        delta = self.arrival_time - self.departure_time
+        total_minutes = int(delta.total_seconds() // 60)
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
+        return f"{hours}h {minutes:02d}min"
 
     class Meta:
         verbose_name = "Vol"

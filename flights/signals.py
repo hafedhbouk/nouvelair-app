@@ -4,7 +4,7 @@ Signaux pour l'application Flights.
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Flight, Aircraft
+from .models import Flight  # noqa: F401
 
 
 @receiver(post_save, sender=Flight)

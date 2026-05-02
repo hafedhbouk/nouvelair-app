@@ -6,6 +6,7 @@
 # =============================================================================
 
 [flake8]
+ignore = E203, E266, E501, W503, W504
 max-line-length = 120
 exclude =
     migrations,
@@ -18,11 +19,6 @@ exclude =
     build,
     dist,
     node_modules
-ignore =
-    E203,   # whitespace before ':' (conflit avec Black)
-    E266,   # too many '#' for block comment
-    E501,   # line too long (géré par max-line-length)
-    W503,   # line break before binary operator
 per-file-ignores =
     tests/*: S101, S106
     */tests/*: S101
