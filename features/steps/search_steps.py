@@ -65,18 +65,6 @@ def step_flight_with_price(context, flight_number, origin_code, dest_code, price
     context.current_flight = flight
 
 
-@given(r'la base de données est peuplée')
-def step_db_populated(context):
-    """Vérifie que la base de données contient des données de test."""
-    from flights.models import Airport, Flight
-    assert Airport.objects.count() >= 3, (
-        "La base de données ne contient pas assez d'aéroports"
-    )
-    assert Flight.objects.count() >= 2, (
-        "La base de données ne contient pas assez de vols"
-    )
-
-
 # ── WHEN : Actions ───────────────────────────────────────────────────────────
 
 
@@ -245,13 +233,6 @@ def step_select_class(context, travel_class):
         )
 
 
-@when(r'j\'accède à la page "([^"]+)"')
-def step_access_page(context, url_name):
-    """Accède à une page par son nom d'URL Django."""
-    url = reverse(url_name)
-    context.response = context.test.client.get(url)
-    context.current_url_name = url_name
-
 
 # ── THEN : Vérifications ────────────────────────────────────────────────────
 
@@ -281,16 +262,6 @@ def step_no_results(context):
             f"Des résultats inattendus ont été trouvés : {len(flights)} vol(s)"
         )
 
-
-@then(r'un message d\'erreur contenant "([^"]+)" est affiché')
-def step_error_message(context, message_fragment):
-    """Vérifie qu'un message d'erreur spécifique est affiché."""
-    content = context.response.content.decode("utf-8").lower()
-    fragment = message_fragment.lower()
-    assert fragment in content, (
-        f"Le message d'erreur contenant '{message_fragment}' n'a pas été trouvé "
-        f"dans la réponse. Contenu (extrait) : {content[:500]}"
-    )
 
 
 @then(r'le prix est affiché en TND')

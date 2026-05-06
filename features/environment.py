@@ -20,6 +20,14 @@ import django
 
 django.setup()
 
+# Import Django models AFTER django.setup()
+from django.contrib.auth.models import User
+from flights.models import Airport, Aircraft, Flight
+from accounts.models import UserProfile
+from bookings.models import Booking, Passenger, Payment
+from promotions.models import Promotion, NewsletterSubscription
+from destinations.models import Destination
+
 from behave import fixture, use_fixture
 from django.test.utils import setup_test_environment, teardown_test_environment
 from django.db import connection
@@ -137,7 +145,11 @@ def _create_test_user():
     if created:
         user.set_password("TestPassword123!")
         user.save()
-        UserProfile.objects.create(user=user, phone="+21612345678")
+    # Créer ou obtenir le profil utilisateur
+    UserProfile.objects.get_or_create(
+        user=user,
+        defaults={"phone": "+21612345678"}
+    )
     return user
 
 
@@ -216,14 +228,6 @@ def before_all(context):
 
     - Initialise l'environnement de test Django
     """
-    # Import Django models after settings are configured
-    from django.contrib.auth.models import User
-    from flights.models import Airport, Aircraft, Flight
-    from accounts.models import UserProfile
-    from bookings.models import Booking, Passenger, Payment
-    from promotions.models import Promotion, NewsletterSubscription
-    from destinations.models import Destination
-
     setup_test_environment()
 
 
@@ -244,17 +248,33 @@ def before_scenario(context, scenario):
     - Crée les données de test de référence
     - Initialise le client de test Django
     """
-    # Réinitialise la base de données
-    cursor = connection.cursor()
-    cursor.execute("PRAGMA foreign_keys = OFF;")
-    tables = connection.introspection.table_names()
-    for table in tables:
-        cursor.execute(f'DELETE FROM "{table}";')
-    # Réinitialise les auto-incréments (SQLite)
-    for table in tables:
-        cursor.execute(f'DELETE FROM sqlite_sequence WHERE name = "{table}";')
-    cursor.execute("PRAGMA foreign_keys = ON;")
-    connection.commit()
+    # Réinitialise la base de données de manière plus robuste
+    try:
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA foreign_keys = OFF;")
+        
+        # Récupère les tables et les vide en ignorant les tables système
+        tables = connection.introspection.table_names()
+        for table in tables:
+            if not table.startswith('sqlite_'):  # Ignorer les tables système SQLite
+                try:
+                    cursor.execute(f'DELETE FROM "{table}";')
+                except Exception as e:
+                    print(f"Erreur lors de la suppression de la table {table}: {e}")
+        
+        # Réinitialise les auto-incréments (SQLite)
+        for table in tables:
+            if not table.startswith('sqlite_'):
+                try:
+                    cursor.execute(f'DELETE FROM sqlite_sequence WHERE name = "{table}";')
+                except Exception:
+                    pass
+        
+        cursor.execute("PRAGMA foreign_keys = ON;")
+        connection.commit()
+    except Exception as e:
+        print(f"Erreur lors de la réinitialisation de la base de données: {e}")
+        connection.rollback()
 
     # Peuple les données de test
     context.test_data = _populate_test_data()
@@ -280,8 +300,16 @@ def after_scenario(context, scenario):
     - Nettoie le contexte
     """
     # Ferme les connexions DB pour éviter les fuites
-    for conn in connection._connections.values():
-        conn.close_if_unusable_or_obsolete()
+    try:
+        for conn in connection._connections.all():
+            conn.close_if_unusable_or_obsolete()
+    except (AttributeError, TypeError):
+        # Si la méthode n'existe pas ou ne fonctionne pas, essayer une autre approche
+        try:
+            if hasattr(connection, 'close'):
+                connection.close()
+        except Exception:
+            pass
 
     # Nettoie le contexte
     if hasattr(context, "test_data"):

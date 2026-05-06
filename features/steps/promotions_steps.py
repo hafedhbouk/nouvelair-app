@@ -96,13 +96,6 @@ def step_email_already_subscribed(context, email):
     )
 
 
-@given(r'je suis un visiteur non connecté')
-def step_visitor(context):
-    """S'assure qu'aucun utilisateur n'est connecté."""
-    context.test.client.logout()
-    context.is_visitor = True
-
-
 # ── WHEN : Actions ───────────────────────────────────────────────────────────
 
 
@@ -173,33 +166,6 @@ def step_no_discount(context):
     """Vérifie qu'aucune remise n'a été appliquée."""
     assert not getattr(context, "promo_applied", True), (
         "Une remise a été appliquée alors qu'elle ne devait pas l'être"
-    )
-
-
-@then(r'un message de confirmation est affiché')
-def step_confirmation_message(context):
-    """Vérifie qu'un message de confirmation est affiché."""
-    content = context.response.content.decode("utf-8").lower()
-    has_confirmation = (
-        "confirm" in content
-        or "succès" in content
-        or "merci" in content
-        or "appliquée" in content
-        or "enregistré" in content
-        or "inscrit" in content
-    )
-    assert has_confirmation, (
-        "Aucun message de confirmation trouvé dans la réponse"
-    )
-
-
-@then(r'un message d\'erreur contenant "([^"]+)" est affiché')
-def step_error_contains(context, text):
-    """Vérifie qu'un message d'erreur contenant un texte spécifique est affiché."""
-    content = context.response.content.decode("utf-8").lower()
-    assert text.lower() in content, (
-        f"Le message d'erreur contenant '{text}' n'a pas été trouvé. "
-        f"Contenu (extrait) : {content[:500]}"
     )
 
 

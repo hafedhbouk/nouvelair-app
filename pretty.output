@@ -1,0 +1,63 @@
+Fonctionnalité: Compte utilisateur (EP-06) # features/auth.feature:2
+  En tant que visiteur ou utilisateur
+  Je veux m'inscrire, me connecter et gérer mon profil
+  Afin de bénéficier des services personnalisés de NouvelAir
+  Fonctionnalité: Compte utilisateur (EP-06)  # features/auth.feature:2
+
+  Scénario: Inscription avec des données valides           # features/auth.feature:12
+    Étant donné que la base de données est peuplée         # features/steps/common_steps.py:20
+    Étant donné je suis un visiteur non connecté           # features/steps/common_steps.py:41
+    Quand je m'inscris avec les données valides suivantes: # None
+      | username | prenom | nom    | email              | mot_de_passe   | confirmation   |
+      | newuser  | Pierre | Martin | pierre@exemple.com | SecurePass123! | SecurePass123! |
+    Alors le compte est créé avec succès                   # None
+    Et je suis connecté automatiquement                    # None
+    Et je suis redirigé vers la page "flights:home"        # None
+    Et un profil utilisateur est créé automatiquement      # None
+
+  Scénario: Inscription avec un email déjà utilisé affiche une erreur      # features/auth.feature:24
+    Étant donné que la base de données est peuplée                         # features/steps/common_steps.py:20
+    Étant donné je suis un visiteur non connecté                           # features/steps/common_steps.py:41
+    Quand je m'inscris avec les données suivantes ayant un email dupliqué: # None
+      | username  | prenom | nom   | email            | mot_de_passe   | confirmation   |
+      | otheruser | Marie  | Curie | test@example.com | SecurePass123! | SecurePass123! |
+    Alors le compte n'est pas créé                                         # None
+    Et un message d'erreur contenant "email" est affiché                   # None
+
+  Scénario: Connexion avec des identifiants valides            # features/auth.feature:34
+    Étant donné que la base de données est peuplée             # features/steps/common_steps.py:20
+    Étant donné je suis un visiteur non connecté               # features/steps/common_steps.py:41
+    Quand je me connecte avec "testuser" et "TestPassword123!" # None
+    Alors je suis connecté avec succès                         # None
+    Et je suis redirigé vers la page "flights:home"            # None
+
+  Scénario: Connexion échouée avec un mauvais mot de passe  # features/auth.feature:42
+    Étant donné que la base de données est peuplée          # features/steps/common_steps.py:20
+    Étant donné je suis un visiteur non connecté            # features/steps/common_steps.py:41
+    Quand je me connecte avec "testuser" et "wrongpass"     # None
+    Alors je ne suis pas connecté                           # None
+    Et un message d'erreur est affiché                      # None
+    Et je reste sur la page "accounts:login"                # None
+
+  Scénario: Déconnexion d'un utilisateur connecté                                               # features/auth.feature:51
+    Étant donné que la base de données est peuplée                                              # features/steps/common_steps.py:20
+    Étant donné je suis connecté en tant que "testuser" avec le mot de passe "TestPassword123!" # None
+    Quand je me déconnecte                                                                      # None
+    Alors je suis déconnecté                                                                    # None
+    Et je suis redirigé vers la page "flights:home"                                             # None
+
+  Scénario: Mise à jour du profil utilisateur                                                   # features/auth.feature:59
+    Étant donné que la base de données est peuplée                                              # features/steps/common_steps.py:20
+    Étant donné je suis connecté en tant que "testuser" avec le mot de passe "TestPassword123!" # None
+    Quand je mets à jour mon profil avec les données suivantes:                                 # None
+      | prenom      | nom       | email                | telephone    | ville  | pays    |
+      | JeanModifié | DupontMod | modified@exemple.com | +21698765432 | Sousse | Tunisie |
+    Alors le profil est mis à jour avec succès                                                  # None
+    Et les informations sont sauvegardées en base de données                                    # None
+
+  Scénario: L'accès au profil nécessite une connexion    # features/auth.feature:69
+    Étant donné que la base de données est peuplée       # features/steps/common_steps.py:20
+    Étant donné je suis un visiteur non connecté         # features/steps/common_steps.py:41
+    Quand j'accède à la page "accounts:profile"          # None
+    Alors je suis redirigé vers la page "accounts:login" # None
+
