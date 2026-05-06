@@ -13,9 +13,6 @@ fichiers .feature :
 from behave import given, when, then
 from django.urls import reverse
 
-from flights.models import Airport, Flight
-from django.contrib.auth.models import User
-
 
 # ── GIVEN : Préconditions ────────────────────────────────────────────────────
 
@@ -28,6 +25,8 @@ def step_db_populated(context):
     - Au moins 2 vols
     - Au moins 1 utilisateur
     """
+    from flights.models import Airport, Flight
+    from django.contrib.auth.models import User
     assert Airport.objects.count() >= 3, (
         f"Pas assez d'aéroports en base : {Airport.objects.count()} (minimum 3)"
     )

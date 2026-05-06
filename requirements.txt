@@ -26,6 +26,9 @@ flake8>=6.1
 black>=23.0
 isort>=5.12
 
+# SonarQube
+sonar-scanner>=5.0
+
 # Rapports
 pytest-html>=4.1
 allure-pytest>=2.13

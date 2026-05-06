@@ -13,7 +13,12 @@ Hooks :
 """
 
 import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "nouvelair.settings")
+
 import django
+
+django.setup()
 
 from behave import fixture, use_fixture
 from django.test.utils import setup_test_environment, teardown_test_environment
@@ -22,13 +27,6 @@ from django.core.management import call_command
 
 from datetime import timedelta
 from django.utils import timezone
-from django.contrib.auth.models import User
-
-from flights.models import Airport, Aircraft, Flight
-from accounts.models import UserProfile
-from bookings.models import Booking, Passenger, Payment
-from promotions.models import Promotion, NewsletterSubscription
-from destinations.models import Destination
 
 
 # ── Fixtures de données de test ───────────────────────────────────────────────
@@ -216,18 +214,15 @@ def before_all(context):
     """
     Initialisation globale avant l'exécution de tous les scénarios.
 
-    - Configure les paramètres Django
     - Initialise l'environnement de test Django
-    - Appelle django.setup()
     """
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "nouvelair.settings")
-    os.environ.setdefault("DJANGO_CONFIGURATION", "Testing")
-
-    # behave-django appelle django.setup() automatiquement si le module
-    # behave_django.fixture est configuré dans behave.ini
-    # Mais on s'assure que Django est bien initialisé
-    if not django.apps.apps.ready:
-        django.setup()
+    # Import Django models after settings are configured
+    from django.contrib.auth.models import User
+    from flights.models import Airport, Aircraft, Flight
+    from accounts.models import UserProfile
+    from bookings.models import Booking, Passenger, Payment
+    from promotions.models import Promotion, NewsletterSubscription
+    from destinations.models import Destination
 
     setup_test_environment()
 

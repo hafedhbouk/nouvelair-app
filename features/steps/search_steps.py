@@ -15,8 +15,6 @@ from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta, date
 
-from flights.models import Airport, Flight
-
 
 # ── GIVEN : Préconditions ────────────────────────────────────────────────────
 
@@ -24,6 +22,7 @@ from flights.models import Airport, Flight
 @given(r'l\'aéroport "([^"]+)" existe dans la base')
 def step_airport_exists(context, airport_code):
     """Vérifie qu'un aéroport existe dans la base de données."""
+    from flights.models import Airport
     airport = Airport.objects.filter(code=airport_code).first()
     assert airport is not None, (
         f"L'aéroport '{airport_code}' n'existe pas dans la base de données"
@@ -34,6 +33,7 @@ def step_airport_exists(context, airport_code):
 @given(r'un vol "([^"]+)" de "([^"]+)" à "([^"]+)" est programmé')
 def step_flight_scheduled(context, flight_number, origin_code, dest_code):
     """Vérifie qu'un vol est programmé entre deux aéroports."""
+    from flights.models import Flight
     flight = Flight.objects.filter(flight_number=flight_number).first()
     assert flight is not None, (
         f"Le vol '{flight_number}' n'existe pas dans la base de données"
@@ -52,6 +52,7 @@ def step_flight_scheduled(context, flight_number, origin_code, dest_code):
 @given(r'un vol "([^"]+)" de "([^"]+)" à "([^"]+)" à ([\d.]+) TND est programmé')
 def step_flight_with_price(context, flight_number, origin_code, dest_code, price):
     """Vérifie qu'un vol est programmé avec un prix spécifique."""
+    from flights.models import Flight
     flight = Flight.objects.filter(flight_number=flight_number).first()
     assert flight is not None, (
         f"Le vol '{flight_number}' n'existe pas dans la base de données"
@@ -67,6 +68,7 @@ def step_flight_with_price(context, flight_number, origin_code, dest_code, price
 @given(r'la base de données est peuplée')
 def step_db_populated(context):
     """Vérifie que la base de données contient des données de test."""
+    from flights.models import Airport, Flight
     assert Airport.objects.count() >= 3, (
         "La base de données ne contient pas assez d'aéroports"
     )
@@ -84,6 +86,7 @@ def step_db_populated(context):
 )
 def step_search_oneway(context, origin_code, dest_code, passengers):
     """Effectue une recherche de vol aller simple via le formulaire."""
+    from flights.models import Airport, Flight
     origin = Airport.objects.get(code=origin_code)
     dest = Airport.objects.get(code=dest_code)
 
@@ -134,6 +137,7 @@ def step_search_oneway(context, origin_code, dest_code, passengers):
 )
 def step_search_roundtrip(context, origin_code, dest_code, passengers):
     """Effectue une recherche de vol aller-retour via le formulaire."""
+    from flights.models import Airport, Flight
     origin = Airport.objects.get(code=origin_code)
     dest = Airport.objects.get(code=dest_code)
 
@@ -181,6 +185,7 @@ def step_search_roundtrip(context, origin_code, dest_code, passengers):
       r'pour la date d\'hier')
 def step_search_past_date(context, origin_code, dest_code):
     """Effectue une recherche avec une date dans le passé."""
+    from flights.models import Airport
     origin = Airport.objects.get(code=origin_code)
     dest = Airport.objects.get(code=dest_code)
     past_date = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")

@@ -23,17 +23,6 @@ from bookings.models import Booking, Passenger, Payment
 # ── GIVEN : Préconditions ────────────────────────────────────────────────────
 
 
-@given(r'je suis connecté en tant que "([^"]+)" avec le mot de passe "([^"]+)"')
-def step_logged_in(context, username, password):
-    """Connecte un utilisateur via le client de test."""
-    success = context.test.client.login(username=username, password=password)
-    assert success, (
-        f"Impossible de connecter l'utilisateur '{username}' "
-        f"avec le mot de passe fourni"
-    )
-    context.logged_in_user = User.objects.get(username=username)
-
-
 @given(r'un vol est disponible pour la réservation')
 def step_flight_available(context):
     """Récupère un vol disponible pour la réservation."""
@@ -154,13 +143,6 @@ def step_booking_for_lastname(context, last_name, ref_label):
     context.booking_last_name = last_name
 
 
-@given(r'je suis un visiteur non connecté')
-def step_visitor(context):
-    """S'assure qu'aucun utilisateur n'est connecté."""
-    context.test.client.logout()
-    context.is_visitor = True
-
-
 # ── WHEN : Actions ───────────────────────────────────────────────────────────
 
 
@@ -252,14 +234,6 @@ def step_lookup_booking(context, ref_label, last_name):
     )
 
 
-@when(r'j\'accède à la page "([^"]+)"')
-def step_access_page(context, url_name):
-    """Accède à une page par son nom d'URL."""
-    url = reverse(url_name)
-    context.response = context.test.client.get(url)
-    context.current_url_name = url_name
-
-
 # ── THEN : Vérifications ────────────────────────────────────────────────────
 
 
@@ -327,40 +301,6 @@ def step_status_remains(context, status):
     context.booking.refresh_from_db()
     assert context.booking.status == status, (
         f"Le statut a changé : {context.booking.status} (attendu : {status})"
-    )
-
-
-@then(r'un message d\'erreur est affiché')
-def step_error_displayed(context):
-    """Vérifie qu'un message d'erreur est affiché."""
-    content = context.response.content.decode("utf-8").lower()
-    has_error = (
-        "error" in content
-        or "erreur" in content
-        or "invalid" in content
-        or "impossible" in content
-    )
-    assert has_error, "Aucun message d'erreur trouvé dans la réponse"
-
-
-@then(r'un message d\'erreur contenant "([^"]+)" est affiché')
-def step_error_contains(context, text):
-    """Vérifie qu'un message d'erreur contenant un texte spécifique est affiché."""
-    content = context.response.content.decode("utf-8").lower()
-    assert text.lower() in content, (
-        f"Le message d'erreur contenant '{text}' n'a pas été trouvé"
-    )
-
-
-@then(r'je suis redirigé vers la page "([^"]+)"')
-def step_redirected_to(context, url_name):
-    """Vérifie que la réponse est une redirection vers la page spécifiée."""
-    assert context.response.status_code in (301, 302), (
-        f"Pas de redirection, statut : {context.response.status_code}"
-    )
-    expected_url = reverse(url_name)
-    assert context.response.url == expected_url, (
-        f"Redirection vers {context.response.url}, attendu {expected_url}"
     )
 
 

@@ -372,7 +372,7 @@ pytest --cov=. --cov-fail-under=80
 
 ## 🔄 Pipeline CI/CD
 
-Le projet utilise **GitHub Actions** avec un pipeline de **7 jobs** :
+Le projet utilise **GitHub Actions** avec un pipeline de **8 jobs** :
 
 | # | Job | Description | Dépendances |
 |---|-----|-------------|-------------|
@@ -383,11 +383,30 @@ Le projet utilise **GitHub Actions** avec un pipeline de **7 jobs** :
 | 5 | **Tests E2E** | Playwright + captures d'écran | unit + integration |
 | 6 | **Tests de performance** | Locust headless + seuils | unit + integration |
 | 7 | **Tests de sécurité** | Bandit + Safety | lint |
+| 8 | **Analyse SonarQube** | Qualité du code, couverture | lint |
 
 ### Déclencheurs
 
 - **Push** sur `main`, `sprint1`, `sprint2`
 - **Pull Request** vers `main`
+
+### Configuration SonarQube
+
+Pour activer l'analyse SonarQube, configurez ces secrets GitHub :
+
+- `SONAR_TOKEN` : Token d'authentification SonarQube
+- `SONAR_HOST_URL` : URL de votre serveur SonarQube (ex: `https://sonarcloud.io`)
+- `SONAR_PROJECT_KEY` : Clé du projet (optionnel, défaut: `nouvelair-project`)
+
+### Fichier de configuration
+
+Le fichier `.sonar-project.properties` à la racine du projet configure l'analyse :
+
+```properties
+sonar.projectKey=nouvelair-project
+sonar.sources=bookings,destinations,flights,nouvelair
+sonar.python.coverage.reportPaths=coverage.xml
+```
 
 ### Consultation
 

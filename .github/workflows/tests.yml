@@ -528,14 +528,63 @@ jobs:
             safety_screen.txt
           retention-days: 14
 
+# ===========================================================================
+  # Job 7: SonarQube Analysis
   # ===========================================================================
-  # Job final: Statut global du pipeline
+  sonarqube:
+    name: "Analyse SonarQube"
+    runs-on: ubuntu-latest
+    needs: [lint, unit-tests, integration-tests]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/sprint'))
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configuration Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Installation des dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements_test.txt
+
+      - name: Exécution des tests avec couverture
+        env:
+          DJANGO_SETTINGS_MODULE: nouvelair.settings
+        run: |
+          pytest tests/ --cov --cov-report=xml --cov-report=html -m "unit or integration" -v --tb=short || true
+
+      - name: Analyse SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          unzip -o sonar-scanner.zip
+          PROJECT_KEY="${{ secrets.SONAR_PROJECT_KEY }}"
+          if [ -z "$PROJECT_KEY" ]; then PROJECT_KEY="nouvelair-project"; fi
+          ./sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+            -Dsonar.projectKey=$PROJECT_KEY \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=$SONAR_HOST_URL \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+
+  # ===========================================================================
+  # Job 8: Statut global du pipeline
   # ===========================================================================
   pipeline-status:
     name: "Statut Global du Pipeline"
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint, unit-tests, integration-tests, bdd-tests, e2e-tests, performance-tests, security-tests]
+    needs: [lint, unit-tests, integration-tests, bdd-tests, e2e-tests, performance-tests, security-tests, sonarqube]
 
     steps:
       - name: Vérification du statut global
@@ -553,6 +602,7 @@ jobs:
           E2E="${{ needs.e2e-tests.result }}"
           PERF="${{ needs.performance-tests.result }}"
           SEC="${{ needs.security-tests.result }}"
+          SONAR="${{ needs.sonarqube.result }}"
 
           status_icon() {
             case "$1" in
@@ -573,10 +623,11 @@ jobs:
           echo "| Tests E2E | $(status_icon $E2E) ${E2E} |" >> $GITHUB_STEP_SUMMARY
           echo "| Tests Performance | $(status_icon $PERF) ${PERF} |" >> $GITHUB_STEP_SUMMARY
           echo "| Tests Sécurité | $(status_icon $SEC) ${SEC} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SonarQube | $(status_icon $SONAR) ${SONAR} |" >> $GITHUB_STEP_SUMMARY
 
           echo "" >> $GITHUB_STEP_SUMMARY
           OVERALL="success"
-          for r in $LINT $UNIT $INTEG $BDD $E2E $PERF $SEC; do
+          for r in $LINT $UNIT $INTEG $BDD $E2E $PERF $SEC $SONAR; do
             if [ "$r" = "failure" ]; then
               OVERALL="failure"
               break

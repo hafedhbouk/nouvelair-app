@@ -11,9 +11,6 @@ from behave import given, when, then
 from django.urls import reverse
 from django.utils import timezone
 
-from flights.models import Flight
-from promotions.models import Promotion, NewsletterSubscription
-
 
 # ── GIVEN : Préconditions ────────────────────────────────────────────────────
 
@@ -21,12 +18,14 @@ from promotions.models import Promotion, NewsletterSubscription
 @given(r'que la base de données est peuplée')
 def step_db_populated(context):
     """Vérifie que la base de données contient des données."""
+    from promotions.models import Promotion
     assert Promotion.objects.count() >= 1, "Aucune promotion en base"
 
 
 @given(r'un code promo "([^"]+)" est actif avec (\d+)% de réduction')
 def step_active_promo(context, code, discount):
     """Vérifie qu'un code promo actif existe avec un pourcentage de réduction."""
+    from promotions.models import Promotion
     promo = Promotion.objects.filter(code=code).first()
     assert promo is not None, f"Le code promo '{code}' n'existe pas"
     assert promo.is_active, f"Le code promo '{code}' n'est pas actif"
@@ -39,6 +38,7 @@ def step_active_promo(context, code, discount):
 @given(r'un code promo "([^"]+)" est expiré')
 def step_expired_promo(context, code):
     """Vérifie qu'un code promo est expiré."""
+    from promotions.models import Promotion
     promo = Promotion.objects.filter(code=code).first()
     assert promo is not None, f"Le code promo '{code}' n'existe pas"
     now = timezone.now()
@@ -52,6 +52,7 @@ def step_expired_promo(context, code):
 @given(r'un vol est disponible avec un prix de ([\d.]+) TND')
 def step_flight_with_price(context, price):
     """Récupère un vol avec un prix spécifique."""
+    from flights.models import Flight
     expected_price = float(price)
     flight = Flight.objects.filter(
         base_price_economy=expected_price,
@@ -69,6 +70,7 @@ def step_flight_with_price(context, price):
 @given(r'un vol affaires est disponible avec un prix de ([\d.]+) TND')
 def step_business_flight_with_price(context, price):
     """Récupère un vol affaires avec un prix spécifique."""
+    from flights.models import Flight
     expected_price = float(price)
     flight = Flight.objects.filter(
         base_price_business=expected_price,
@@ -87,6 +89,7 @@ def step_business_flight_with_price(context, price):
 )
 def step_email_already_subscribed(context, email):
     """Inscrit un email à la newsletter avant le scénario."""
+    from promotions.models import NewsletterSubscription
     NewsletterSubscription.objects.get_or_create(
         email=email,
         defaults={"first_name": "Test", "is_active": True},
@@ -106,6 +109,7 @@ def step_visitor(context):
 @when(r'j\'applique le code "([^"]+)" au vol')
 def step_apply_promo(context, code):
     """Applique un code promotionnel au vol sélectionné."""
+    from promotions.models import Promotion
     promo = Promotion.objects.filter(code=code).first()
     flight = getattr(context, "promo_flight", None)
 
@@ -134,6 +138,7 @@ def step_apply_promo(context, code):
 )
 def step_subscribe_newsletter(context, email):
     """Inscrit un email à la newsletter."""
+    from promotions.models import NewsletterSubscription
     context.newsletter_email = email
     context.newsletter_count_before = NewsletterSubscription.objects.count()
 

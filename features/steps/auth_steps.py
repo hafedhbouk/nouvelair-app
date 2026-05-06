@@ -15,23 +15,14 @@ Scénarios couverts :
 from behave import given, when, then
 from django.urls import reverse
 
-from django.contrib.auth.models import User
-from accounts.models import UserProfile
-
 
 # ── GIVEN : Préconditions ────────────────────────────────────────────────────
-
-
-@given(r'je suis un visiteur non connecté')
-def step_visitor(context):
-    """S'assure qu'aucun utilisateur n'est connecté."""
-    context.test.client.logout()
-    context.is_visitor = True
 
 
 @given(r'je suis connecté en tant que "([^"]+)" avec le mot de passe "([^"]+)"')
 def step_logged_in(context, username, password):
     """Connecte un utilisateur via le client de test."""
+    from django.contrib.auth.models import User
     success = context.test.client.login(username=username, password=password)
     assert success, (
         f"Impossible de connecter l'utilisateur '{username}' "
@@ -39,12 +30,6 @@ def step_logged_in(context, username, password):
     )
     context.logged_in_user = User.objects.get(username=username)
     context.is_visitor = False
-
-
-@given(r'que la base de données est peuplée')
-def step_db_populated(context):
-    """Vérifie que la base de données contient des données."""
-    assert User.objects.count() >= 1, "La base de données est vide"
 
 
 # ── WHEN : Actions ───────────────────────────────────────────────────────────
@@ -55,6 +40,8 @@ def step_db_populated(context):
 )
 def step_register_valid(context):
     """Inscrit un nouvel utilisateur avec des données valides."""
+    from django.contrib.auth.models import User
+    from accounts.models import UserProfile
     table = context.table
     row = table.rows[0]
 
@@ -80,6 +67,7 @@ def step_register_valid(context):
 )
 def step_register_duplicate_email(context):
     """Tente d'inscrire un utilisateur avec un email déjà utilisé."""
+    from django.contrib.auth.models import User
     table = context.table
     row = table.rows[0]
 
@@ -139,20 +127,13 @@ def step_update_profile(context):
     )
 
 
-@when(r'j\'accède à la page "([^"]+)"')
-def step_access_page(context, url_name):
-    """Accède à une page par son nom d'URL."""
-    url = reverse(url_name)
-    context.response = context.test.client.get(url)
-    context.current_url_name = url_name
-
-
 # ── THEN : Vérifications ────────────────────────────────────────────────────
 
 
 @then(r'le compte est créé avec succès')
 def step_account_created(context):
     """Vérifie qu'un nouveau compte a été créé."""
+    from django.contrib.auth.models import User
     assert User.objects.count() == context.user_count_before + 1, (
         "Le compte n'a pas été créé"
     )
@@ -168,6 +149,8 @@ def step_auto_logged_in(context):
 @then(r'un profil utilisateur est créé automatiquement')
 def step_profile_created(context):
     """Vérifie qu'un profil a été créé pour l'utilisateur."""
+    from django.contrib.auth.models import User
+    from accounts.models import UserProfile
     latest_user = User.objects.latest("id")
     assert hasattr(latest_user, "profile"), (
         "Aucun profil n'a été créé pour le nouvel utilisateur"
@@ -177,6 +160,7 @@ def step_profile_created(context):
 @then(r'le compte n\'est pas créé')
 def step_account_not_created(context):
     """Vérifie qu'aucun nouveau compte n'a été créé."""
+    from django.contrib.auth.models import User
     assert User.objects.count() == context.user_count_before, (
         "Un compte a été créé malgré l'erreur attendue"
     )
@@ -201,42 +185,6 @@ def step_logged_out(context):
     """Vérifie que l'utilisateur a été déconnecté."""
     user = context.test.client.session.get("_auth_user_id")
     assert user is None, "L'utilisateur est encore connecté"
-
-
-@then(r'un message d\'erreur est affiché')
-def step_error_displayed(context):
-    """Vérifie qu'un message d'erreur est affiché."""
-    content = context.response.content.decode("utf-8").lower()
-    has_error = (
-        "error" in content
-        or "erreur" in content
-        or "incorrect" in content
-        or "invalide" in content
-        or "invalid" in content
-    )
-    assert has_error, "Aucun message d'erreur trouvé dans la réponse"
-
-
-@then(r'un message d\'erreur contenant "([^"]+)" est affiché')
-def step_error_contains(context, text):
-    """Vérifie qu'un message d'erreur contenant un texte spécifique est affiché."""
-    content = context.response.content.decode("utf-8").lower()
-    assert text.lower() in content, (
-        f"Le message d'erreur contenant '{text}' n'a pas été trouvé. "
-        f"Contenu (extrait) : {content[:500]}"
-    )
-
-
-@then(r'je suis redirigé vers la page "([^"]+)"')
-def step_redirected_to(context, url_name):
-    """Vérifie que la réponse est une redirection vers la page spécifiée."""
-    assert context.response.status_code in (301, 302), (
-        f"Pas de redirection, statut : {context.response.status_code}"
-    )
-    expected_url = reverse(url_name)
-    assert context.response.url == expected_url, (
-        f"Redirection vers {context.response.url}, attendu {expected_url}"
-    )
 
 
 @then(r'je reste sur la page "([^"]+)"')
