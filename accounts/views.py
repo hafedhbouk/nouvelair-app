@@ -66,6 +66,8 @@ class LogoutView(View):
 class ProfileView(LoginRequiredMixin, View):
     """Vue du profil utilisateur."""
 
+    login_url = '/accounts/login/'  # Spécifier l'URL de redirection pour la connexion
+
     def get(self, request):
         user_form = UserForm(instance=request.user)
         profile, _ = UserProfile.objects.get_or_create(user=request.user)

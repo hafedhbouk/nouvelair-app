@@ -20,7 +20,7 @@ class RegisterPage(BasePage):
         url (str): chemin relatif de la page d'inscription.
     """
 
-    url = "/accounts/register/"
+    url = "/accounts/inscription/"
 
     def fill_form(
         self,
@@ -28,6 +28,8 @@ class RegisterPage(BasePage):
         email: str,
         password1: str,
         password2: str,
+        first_name: str = "",
+        last_name: str = "",
     ) -> None:
         """
         Remplit tous les champs du formulaire d'inscription.
@@ -37,19 +39,35 @@ class RegisterPage(BasePage):
             email: adresse email.
             password1: mot de passe.
             password2: confirmation du mot de passe.
+            first_name: prénom (optionnel).
+            last_name: nom de famille (optionnel).
         """
-        self.fill("input#id_username, input[name='username']", username)
-        self.fill("input#id_email, input[name='email']", email)
-        self.fill("input#id_password1, input[name='password1']", password1)
-        self.fill("input#id_password2, input[name='password2']", password2)
+        # Remplir les champs principaux
+        self.fill("input[name='username']", username)
+        self.fill("input[name='email']", email)
+        self.fill("input[name='password1']", password1)
+        self.fill("input[name='password2']", password2)
+        
+        # Remplir les champs optionnels s'ils existent
+        if first_name:
+            try:
+                self.fill("input[name='first_name']", first_name)
+            except Exception:
+                pass  # Champ optionnel
+        
+        if last_name:
+            try:
+                self.fill("input[name='last_name']", last_name)
+            except Exception:
+                pass  # Champ optionnel
 
     def submit(self) -> None:
         """
         Soumet le formulaire d'inscription.
         """
         submit_btn = self.page.locator(
-            "button[type='submit'], input[type='submit'], "
-            "form button:has-text('Inscription'), form button:has-text('Register'), "
-            "form button:has-text('S\'inscrire')"
+            "button[type='submit']:has-text('S\\'inscrire'), "
+            "button[type='submit']:has-text('Inscription'), "
+            "button[type='submit']"
         )
-        submit_btn.click()
+        self.click("button[type='submit']")

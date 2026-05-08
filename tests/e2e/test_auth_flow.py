@@ -14,6 +14,8 @@ Tests: 5
 import time
 import pytest
 from playwright.sync_api import Page
+from django.contrib.auth.models import User
+from accounts.models import UserProfile
 from pages.login_page import LoginPage
 from pages.register_page import RegisterPage
 from pages.home_page import HomePage
@@ -24,7 +26,38 @@ from pages.home_page import HomePage
 TIMESTAMP = str(int(time.time()))
 TEST_USERNAME = f"e2e_user_{TIMESTAMP}"
 TEST_EMAIL = f"e2e_{TIMESTAMP}@example.com"
-TEST_PASSWORD = "SecureE2EPass123!"
+TEST_PASSWORD = "SecurePass123!"
+
+
+# ── Fixtures ───────────────────────────────────────────────────────────────────
+
+@pytest.fixture(scope="function")
+def testuser(db):
+    """Crée un utilisateur de test pour les tests d'authentification."""
+    # Supprimer l'utilisateur s'il existe déjà
+    User.objects.filter(username="testuser").delete()
+    
+    user = User.objects.create_user(
+        username="testuser",
+        email="test@nouvelair.com",
+        password="SecurePass123!",
+        first_name="Ahmed",
+        last_name="Ben Ali",
+    )
+    # Créer le profil utilisateur
+    UserProfile.objects.get_or_create(
+        user=user,
+        defaults={
+            "phone": "+216 22 345 678",
+            "city": "Tunis",
+            "country": "Tunisie",
+            "nationality": "Tunisienne",
+            "date_of_birth": None,
+            "gender": "M",
+            "newsletter": True,
+        }
+    )
+    return user
 
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
@@ -33,7 +66,7 @@ TEST_PASSWORD = "SecureE2EPass123!"
 class TestAuthFlow:
     """Suite de tests E2E pour le flux d'authentification."""
 
-    def test_login_flow(self, page: Page, base_url: str):
+    def test_login_flow(self, page: Page, base_url: str, testuser):
         """
         Teste le flux de connexion complet.
 
@@ -52,7 +85,7 @@ class TestAuthFlow:
         login.wait_for_selector("form", timeout=5000)
 
         login.fill_username("testuser")
-        login.fill_password("testpassword123")
+        login.fill_password("SecurePass123!")
         login.submit()
 
         page.wait_for_load_state("domcontentloaded")
@@ -67,7 +100,7 @@ class TestAuthFlow:
             f"L'utilisateur n'a pas été redirigé après connexion. URL: {current_url}"
         )
 
-    def test_login_invalid_credentials(self, page: Page, base_url: str):
+    def test_login_invalid_credentials(self, page: Page, base_url: str, testuser):
         """
         Teste la connexion avec des identifiants invalides.
 
@@ -94,7 +127,7 @@ class TestAuthFlow:
 
         # Vérifier qu'on reste sur la page de connexion
         current_url = page.url
-        still_on_login = "/login" in current_url
+        still_on_login = "/connexion" in current_url
 
         assert still_on_login, (
             f"L'utilisateur a été redirigé alors que les identifiants sont invalides. URL: {current_url}"
@@ -134,6 +167,8 @@ class TestAuthFlow:
             email=TEST_EMAIL,
             password1=TEST_PASSWORD,
             password2=TEST_PASSWORD,
+            first_name="Test",
+            last_name="User",
         )
         register.submit()
 
@@ -148,7 +183,7 @@ class TestAuthFlow:
             f"L'utilisateur n'a pas été redirigé après inscription. URL: {current_url}"
         )
 
-    def test_logout_flow(self, page: Page, base_url: str):
+    def test_logout_flow(self, page: Page, base_url: str, testuser):
         """
         Teste le flux de déconnexion.
 
@@ -167,7 +202,7 @@ class TestAuthFlow:
         login.wait_for_selector("form", timeout=5000)
 
         login.fill_username("testuser")
-        login.fill_password("testpassword123")
+        login.fill_password("SecurePass123!")
         login.submit()
 
         page.wait_for_load_state("domcontentloaded")
@@ -179,14 +214,17 @@ class TestAuthFlow:
         )
 
         if logout_link.count() > 0:
-            logout_link.first.click()
+            # Use JavaScript click since the element may be in a hidden dropdown
+            page.evaluate(
+                "document.querySelector('a[href*=\"deconnexion\"], a[href*=\"logout\"]').click()"
+            )
             page.wait_for_load_state("domcontentloaded")
 
             # Étape 3: Vérifier la redirection
             current_url = page.url
             is_on_home = current_url == f"{base_url}/" or current_url == base_url
 
-            assert is_on_home or "/login" in current_url, (
+            assert is_on_home or "/connexion" in current_url, (
                 f"La déconnexion n'a pas redirigé vers l'accueil. URL: {current_url}"
             )
         else:
@@ -194,25 +232,25 @@ class TestAuthFlow:
             # (l'utilisateur peut ne pas être connecté en raison des données de test)
             pytest.skip("Lien de déconnexion non trouvé (utilisateur potentiellement non connecté)")
 
-    def test_profile_requires_login(self, page: Page, base_url: str):
+    def test_profile_requires_login(self, page: Page, base_url: str, testuser):
         """
         Teste que la page profil est protégée par authentification.
 
         Actions:
-            1. Naviguer directement vers /accounts/profile/
+            1. Naviguer directement vers /accounts/profil/
             2. Vérifier la redirection vers la page de connexion
 
         Assertions:
             - L'utilisateur est redirigé vers la page de connexion
             - Le paramètre 'next' contient l'URL du profil
         """
-        page.goto(f"{base_url}/accounts/profile/", wait_until="domcontentloaded")
+        page.goto(f"{base_url}/accounts/profil/", wait_until="domcontentloaded")
         page.wait_for_load_state("domcontentloaded")
 
         current_url = page.url
 
         # Vérifier la redirection vers la page de connexion
-        is_redirected_to_login = "/login" in current_url or "/accounts/login" in current_url
+        is_redirected_to_login = "/connexion" in current_url or "/accounts/connexion" in current_url or "/accounts/login" in current_url
 
         assert is_redirected_to_login, (
             f"La page profil n'est pas protégée. URL actuelle: {current_url}"

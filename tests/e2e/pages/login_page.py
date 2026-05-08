@@ -1,23 +1,23 @@
-@'
 from playwright.sync_api import Page
+from pages.base_page import BasePage
 
 
-class LoginPage:
-    """Page Object for the NouvelAir login page."""
+class LoginPage(BasePage):
+    def __init__(self, page: Page, base_url: str):
+        super().__init__(page, base_url)
+        self.url = "/accounts/connexion/"      # ← was /accounts/login/
 
-    def __init__(self, page: Page):
-        self.page = page
-        self.url = "/accounts/login/"
-
-    def go_to(self):
-        self.page.goto(self.url)
-        return self
-
-    def login(self, username, password):
+    def fill_username(self, username: str):
         self.page.fill('input[name="username"]', username)
+
+    def fill_password(self, password: str):
         self.page.fill('input[name="password"]', password)
+
+    def submit(self):
         self.page.click('button[type="submit"]')
 
-    def get_error_message(self):
-        return self.page.locator(".alert-danger, .errorlist").text_content()
-'@ | Set-Content "tests\e2e\pages\login_page.py"
+    def get_error_message(self) -> str:
+        locator = self.page.locator(".alert-danger, .errorlist")
+        if locator.count() > 0:
+            return locator.first.text_content() or ""
+        return ""
