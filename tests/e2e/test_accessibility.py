@@ -70,8 +70,18 @@ def run_accessibility_scan(page, tags=None):
     if tags is None:
         tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
 
-    results = axe.run(page, options={"runOnly": {"type": "tag", "values": tags}})
-    return results
+    # FIX: axe.run() returns an AxeResults object; the actual data lives in
+    # results.response (a plain dict).  Accessing .violations directly raises
+    # AttributeError in current versions of axe-playwright-python.
+    axe_results = axe.run(page, options={"runOnly": {"type": "tag", "values": tags}})
+    response = axe_results.response  # dict with violations, passes, etc.
+
+    return {
+        "violations": response.get("violations", []),
+        "passes": response.get("passes", []),
+        "incomplete": response.get("incomplete", []),
+        "inapplicable": response.get("inapplicable", []),
+    }
 
 
 def assert_no_critical_violations(violations):
@@ -145,7 +155,14 @@ def generate_accessibility_report(violations, page_name, page_url):
     }
 
     violation_cards = ""
-    for impact, viols in sorted(by_impact.items(), key=lambda x: ["critical", "serious", "moderate", "minor"].index(x[0]) if x[0] in ["critical", "serious", "moderate", "minor"] else 99):
+    for impact, viols in sorted(
+        by_impact.items(),
+        key=lambda x: (
+            ["critical", "serious", "moderate", "minor"].index(x[0])
+            if x[0] in ["critical", "serious", "moderate", "minor"]
+            else 99
+        ),
+    ):
         label = impact_labels.get(impact, f"⚪ {impact}")
         for v in viols:
             nodes_html = ""
@@ -157,7 +174,12 @@ def generate_accessibility_report(violations, page_name, page_url):
                     <td style="padding:4px 8px;border:1px solid #ddd;font-family:monospace;font-size:12px;">{target}</td>
                     <td style="padding:4px 8px;border:1px solid #ddd;font-size:12px;">{failure}</td>
                 </tr>"""
-            border_color = {"critical":"#e74c3c","serious":"#e67e22","moderate":"#f1c40f","minor":"#3498db"}.get(impact, "#95a5a6")
+            border_color = {
+                "critical": "#e74c3c",
+                "serious": "#e67e22",
+                "moderate": "#f1c40f",
+                "minor": "#3498db",
+            }.get(impact, "#95a5a6")
             violation_cards += f"""
             <div style="margin-bottom:16px;padding:12px;border-left:4px solid {border_color};background:#fafafa;">
                 <h4 style="margin:0 0 4px;">[{v.get("id", "N/A")}] {v.get("description", "Sans description")}</h4>
@@ -217,7 +239,7 @@ def generate_accessibility_report(violations, page_name, page_url):
     </div>
 
     <h2>Détails des violations</h2>
-    {violation_cards if violations else "<p style=\"color:#27ae60;font-weight:bold;\">✅ Aucune violation détectée !</p>"}
+    {violation_cards if violations else '<p style="color:#27ae60;font-weight:bold;">✅ Aucune violation détectée !</p>'}
     <hr>
     <p style="color:#999;font-size:12px;">Généré automatiquement par NouvelAir E2E Tests — {timestamp}</p>
 </body>
@@ -411,13 +433,20 @@ class TestAccessibility:
         page.goto(base_url)
         page.wait_for_load_state("networkidle")
 
-        # Scanner uniquement les règles de contraste
-        axe = Axe()
-        results = axe.run(page, options={
-            "runOnly": {"type": "rule", "values": ["color-contrast"]}
-        })
+        # FIX: use the helper so AxeResults is unwrapped consistently
+        results = run_accessibility_scan(
+            page,
+            tags=None,  # tags ignored — we override via a direct call below
+        )
 
-        violations = results.get("violations", [])
+        # Override: scan only the color-contrast rule
+        axe = Axe()
+        axe_results = axe.run(
+            page,
+            options={"runOnly": {"type": "rule", "values": ["color-contrast"]}},
+        )
+        # FIX: access the underlying dict via .response, not .get()
+        violations = axe_results.response.get("violations", [])
 
         report_path = generate_accessibility_report(
             violations, "Contraste couleurs", base_url
