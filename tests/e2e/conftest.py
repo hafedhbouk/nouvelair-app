@@ -26,6 +26,8 @@ def base_url(live_server):
     return live_server.url
 
 
+
+
 @pytest.fixture(scope="function")          # ← was session
 def browser_context(browser, base_url):
     """Contexte isolé par test — évite les fuites de session/cookies."""

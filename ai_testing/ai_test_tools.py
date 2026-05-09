@@ -20,7 +20,7 @@ from datetime import date, timedelta
 from typing import List, Dict, Any, Optional
 
 
-class TestDataGenerator:
+class DataGenerator:
     """
     Générateur intelligent de données de test pour l'application NouvelAir.
     Utilise des algorithmes pour créer des données réalistes et variées.
@@ -133,7 +133,7 @@ class TestDataGenerator:
         return data
 
 
-class TestAnomalyDetector:
+class AnomalyDetector:
     """
     Détecteur d'anomalies dans les résultats de tests.
     Identifie les patterns inhabituels qui pourraient indiquer des bugs.
@@ -194,7 +194,7 @@ class TestAnomalyDetector:
         }
 
 
-class TestCoverageAnalyzer:
+class CoverageAnalyzer:
     """
     Analyseur de couverture de tests.
     Évalue la couverture des tests par module, fonctionnalité et type de test.
@@ -327,7 +327,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'generate':
-        gen = TestDataGenerator()
+        gen = DataGenerator()
         if args.type == 'all':
             data = gen.generate_bulk_test_data(args.count)
         elif args.type == 'passenger':
@@ -350,12 +350,12 @@ def main():
     elif args.command == 'analyze':
         with open(args.input, 'r', encoding='utf-8') as f:
             results = json.load(f)
-        detector = TestAnomalyDetector(results)
+        detector = AnomalyDetector(results)
         report = detector.generate_report()
         print(json.dumps(report, indent=2, ensure_ascii=False))
 
     elif args.command == 'coverage':
-        analyzer = TestCoverageAnalyzer({
+        analyzer = CoverageAnalyzer({
             'flights': ['search', 'detail', 'airport_list', 'autocomplete'],
             'bookings': ['create', 'confirm', 'cancel', 'lookup', 'my_bookings'],
             'accounts': ['register', 'login', 'logout', 'profile'],

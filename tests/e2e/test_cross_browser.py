@@ -20,11 +20,11 @@ from pages.login_page import LoginPage
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
 @pytest.mark.e2e
-@pytest.mark.parametrize("browser_type", ["chromium", "firefox", "webkit"])
 class TestCrossBrowser:
+
     """Suite de tests E2E multi-navigateurs pour NouvelAir."""
 
-    def test_homepage_cross_browser(self, browser_type: str, page: Page, base_url: str):
+    def test_homepage_cross_browser(self, browser_name: str, page: Page, base_url: str):
         """
         Vérifie que la page d'accueil se charge correctement sur tous les navigateurs.
 
@@ -45,11 +45,11 @@ class TestCrossBrowser:
 
         title = home.get_title()
         assert "NouvelAir" in title or "nouvelair" in title.lower(), (
-            f"[{browser_type}] Le titre ne contient pas 'NouvelAir'. "
+            f"[{browser_name}] Le titre ne contient pas 'NouvelAir'. "
             f"Titre obtenu: '{title}'"
         )
 
-    def test_search_cross_browser(self, browser_type: str, page: Page, base_url: str):
+    def test_search_cross_browser(self, browser_name: str, page: Page, base_url: str):
         """
         Vérifie que la recherche de vols fonctionne sur tous les navigateurs.
 
@@ -72,7 +72,7 @@ class TestCrossBrowser:
             home.select_origin("TUN")
             home.select_destination("CDG")
         except Exception:
-            pytest.skip(f"[{browser_type}] Impossible de sélectionner les aéroports dans le formulaire")
+            pytest.skip(f"[{browser_name}] Impossible de sélectionner les aéroports dans le formulaire")
 
         from datetime import date, timedelta
         future_date = (date.today() + timedelta(days=30)).strftime("%Y-%m-%d")
@@ -83,10 +83,10 @@ class TestCrossBrowser:
 
         current_url = page.url
         assert "/search/" in current_url or "/recherche/" in current_url, (
-            f"[{browser_type}] La recherche n'a pas redirigé vers les résultats. URL: {current_url}"
+            f"[{browser_name}] La recherche n'a pas redirigé vers les résultats. URL: {current_url}"
         )
 
-    def test_login_cross_browser(self, browser_type: str, page: Page, base_url: str):
+    def test_login_cross_browser(self, browser_name: str, page: Page, base_url: str):
         """
         Vérifie que la connexion fonctionne sur tous les navigateurs.
 
@@ -117,4 +117,4 @@ class TestCrossBrowser:
         is_redirected = "/login" not in current_url
 
         # Le test passe si la page répond (le résultat importe peu, on teste le navigateur)
-        assert True, f"[{browser_type}] Le formulaire de connexion fonctionne"
+        assert True, f"[{browser_name}] Le formulaire de connexion fonctionne"
