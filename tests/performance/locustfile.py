@@ -255,7 +255,7 @@ class NouvelAirUser(HttpUser):
             response = self.client.post(
                 "/accounts/connexion/",
                 {
-                    "username": "testuser",
+                    "username": "mytestuser",
                     "password": "NouvelAir2025!",
                     "csrfmiddlewaretoken": csrftoken,
                 },

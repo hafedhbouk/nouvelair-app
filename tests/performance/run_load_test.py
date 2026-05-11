@@ -319,7 +319,7 @@ Exemples:
 
     print()
     print("╔══════════════════════════════════════════════════════════════════════╗")
-    print("║    NouvelAir — Tests de Performance (Jour 8 — Sprint 1)            ║")
+    print("║    NouvelAir — Tests de Performance (Jour 8 — Sprint 1)              ║")
     print("╚══════════════════════════════════════════════════════════════════════╝")
     print(f"  Date      : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"  Serveur   : {HOST}")
